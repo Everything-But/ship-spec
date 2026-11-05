@@ -6,7 +6,18 @@ disable-model-invocation: true
 
 Run after `/to-spec` has written `.scratch/<feature>/spec.md`. You ship the plan, not code: a ClickUp **Planning** subtask holding the spec, a docs-only commit, a PR, the card in `in review`, and a review request on the parent card. Each step ends on a check you make by reading back what you wrote; a tool's `success` is not that check.
 
-Needed in hand: the spec file, the parent ClickUp ID (e.g. `DEV-5822`), and the feature branch already checked out. If the ClickUp tools are missing, stop and tell the user to reconnect ClickUp; there is no fallback.
+Needed in hand: the spec file and the parent ClickUp ID (e.g. `DEV-5822`). If the ClickUp tools are missing, stop and tell the user to reconnect ClickUp; there is no fallback.
+
+## 0. Base branch and reviewer
+
+Ask both in one `AskUserQuestion` call, each with its default as the first, recommended option:
+
+- **Base branch**: the branch the feature branch is created from and the PR merges into. Default `develop`; offer `master` beside it.
+- **Reviewer**: the ClickUp user asked to review the plan in step 6. Default `boy-thairun`.
+
+Then put the work on a feature branch from that base. On a branch already named for this card (`feat/<CLICKUP-ID>-…`), keep it, and say so if it does not start from `upstream/<base>`. Otherwise `git fetch upstream` and `git switch -c feat/<CLICKUP-ID>-<short-description> upstream/<base>`; the untracked planning docs come along.
+
+Done when both answers are in hand and the feature branch is checked out.
 
 ## 1. Planning subtask
 
@@ -45,9 +56,9 @@ Done when `git status` shows the three paths committed and the push reports the 
 
 The remotes are on Bitbucket, which has no CLI here: create the PR in the user's Chrome. Load the `claude-in-chrome` skill, open the URL from the push, and set:
 
-- **Destination**: the `upstream` repository (the fork is `origin`), branch `develop`. Target another branch only when the user names it, and say why in the body.
+- **Destination**: the `upstream` repository (the fork is `origin`), the base branch from step 0.
 - **Title**: `[<CLICKUP-ID>] Spec: <Feature>`.
-- **Description**, one line each: `ClickUp-Task: <CLICKUP-ID>` first, then the task and its Planning card ID, the goal, the files changed, the base branch if not `develop` and why, `Contracts: NO. Migrations: none. Tests: none (docs only). Security impact: N/A.`, and the session's generated-with line.
+- **Description**, one line each: `ClickUp-Task: <CLICKUP-ID>` first, then the task and its Planning card ID, the goal, the files changed, the base branch when it is not `develop` (with the user's reason, if they gave one), `Contracts: NO. Migrations: none. Tests: none (docs only). Security impact: N/A.`, and the session's generated-with line.
 - No reviewers unless the user names them.
 
 Check the form (repos, branches, file count) on a screenshot before pressing **Create pull request**. Done when the tab's URL is the new PR in the upstream repo; close the tab you opened.
@@ -69,10 +80,10 @@ Post **two** separate comments on the parent card with `clickup_create_comment`,
    - api: [[<CLICKUP-ID>] Spec: <Feature>](<PR URL>)
    ```
 
-2. **The review request**, a mention of the reviewer with `please review the plan` and the Planning card's link. The reviewer is `boy-thairun` unless the user names another; resolve the numeric id with `clickup_resolve_assignees` and write the mention as `[@<username>](#user_mention#<id>)`:
+2. **The review request**, a mention of the reviewer from step 0 with `please review the plan` and the Planning card's link. Resolve the reviewer's numeric id with `clickup_resolve_assignees` and write the mention as `[@<username>](#user_mention#<id>)`:
 
    ```markdown
-   [@boy-thairun](#user_mention#<id>) please review the plan: [Planning](<Planning card URL>) (<Planning ID>)
+   [@<reviewer>](#user_mention#<id>) please review the plan: [Planning](<Planning card URL>) (<Planning ID>)
    ```
 
 Done when `clickup_get_task_comments` on the parent shows both comments: the first with every PR, the second with the `@<username>` mention.

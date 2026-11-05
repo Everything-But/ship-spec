@@ -5,7 +5,7 @@ Skills for Claude Code and other agents that read `SKILL.md`, used across Thai.r
 ## Install
 
 ```bash
-npx skills add <owner>/skills
+npx skills add Everything-But/ship-spec
 ```
 
 Run it in the repository you want the skills in. The CLI records each skill's source and hash in `skills-lock.json`; run it again to pick up new versions.
@@ -16,12 +16,13 @@ Run it in the repository you want the skills in. The CLI records each skill's so
 
 Run after `/to-spec` has written `.scratch/<feature>/spec.md`. It ships the plan:
 
+0. Asks which branch to start from and merge into (default `develop`) and who reviews the plan (default `boy-thairun`), and puts the work on a `feat/<CLICKUP-ID>-…` branch from that base.
 1. Creates a **Planning** subtask under the ClickUp task, with the spec as its description.
 2. Fills its dates, priority, assignee, time estimate and custom fields, and recommends sprint points.
 3. Commits the planning docs (`GLOSSARY.md`, new ADRs, `.scratch/<feature>/`) and pushes the branch to your fork.
-4. Opens the PR from your fork to `upstream` `develop` on Bitbucket, through Claude in Chrome.
+4. Opens the PR from your fork to the chosen base branch on `upstream` (Bitbucket), through Claude in Chrome.
 5. Moves the Planning card to `in review`.
-6. Comments on the parent card twice: the PR links, then a request to review the plan.
+6. Comments on the parent card twice: the PR links, then a request to the reviewer to review the plan.
 
 Needs:
 
