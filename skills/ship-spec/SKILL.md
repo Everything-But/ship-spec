@@ -21,20 +21,26 @@ Done when both answers are in hand and the feature branch is checked out.
 
 ## 1. Planning subtask
 
-1. `clickup_get_user` for the user's id and `current_time` (dates come from this clock, not yours). `clickup_get_task` on the parent: it must be assigned to the user, or stop with `TASK OWNERSHIP INVALID`. Note its list id, priority and `Type` field.
+1. `clickup_get_user` for the user's id and `current_time` (dates come from this clock, not yours). `clickup_get_task` on the parent: it must be assigned to the user, or stop with `TASK OWNERSHIP INVALID`. Note its list id, priority, and `Project` and `Type` fields.
 2. `clickup_create_task` in the parent's list with `parent` set, `name: "Planning"`, and `markdown_description` = the spec, opening with one line naming the parent ID, the repo copy path and the branch. Name repo files by path in backticks, never as relative links ClickUp cannot follow. Put every dotted name (`GLOSSARY.md`, `Thai.run`) in backticks too, or ClickUp turns it into an `http://` link.
 
 Done when `clickup_get_task` on the new card shows the full description and the right parent.
 
 ## 2. Card fields
 
-One `clickup_update_task` call:
+One `clickup_update_task` call on the Planning card, then one on the parent.
 
-- `start_date` = today, `due_date` = today + 1 day (from `current_time`, in the user's timezone).
+**Work date**: take `current_time` from `clickup_get_user` (the user's timezone), subtract 6 hours, and keep the date. Work done before 06:00 counts toward the previous day.
+
+On the Planning card:
+
+- `start_date` = the work date, `due_date` = the day after the work date.
 - `priority` = the parent's priority.
 - `assignees: ["me"]`.
 - `time_estimate` in minutes: the planning effort, built from a breakdown you state to the user (code reading, design decisions, glossary/ADR/spec writing, Tech Lead review). About 4h for a feature-sized plan.
-- Custom fields: read them with `clickup_get_custom_fields` for the list and folder, then pick each value from what you know: the project and repository dropdowns from this repo, `Type` from the parent (else the kind of work the parent is), date fields that mean "started" = the start date. Leave a field empty when nothing true fills it yet, such as `Completed on` until the card is done. `PR Link` stays empty on every card: a task can span several repositories, so its PRs are listed in the parent card's comment (step 6). Say which fields you left empty and why.
+- Custom fields: read them with `clickup_get_custom_fields` for the list and folder, then pick each value from what you know: the project and repository dropdowns from this repo, `Type` from the parent (else the kind of work the parent is), `Starting on` and any other date field that means "started" = the work date. Leave a field empty when nothing true fills it yet, such as `Completed on` until the card is done. `PR Link` stays empty on every card: a task can span several repositories, so its PRs are listed in the parent card's comment (step 6). Say which fields you left empty and why.
+
+On the parent card: set `Project` and `Type` to the same values as the Planning card, and only those two fields. Where the parent already has a value, keep it and give the Planning card the parent's value instead.
 
 **Sprint points** go on the Planning card only. The parent card's points stay as they are: ClickUp sums its subtasks' points into the parent. They are a ClickApp field this connector cannot write, so recommend a value (Fibonacci, 1 point ≈ a quarter to half a day; a settled half-day plan is 2) and give the user the UI path and this command to run with their own token on the Planning card:
 
@@ -42,7 +48,7 @@ One `clickup_update_task` call:
 curl -X PUT "https://api.clickup.com/api/v2/task/<task-id>" -H "Authorization: $CLICKUP_API_TOKEN" -H "Content-Type: application/json" -d '{"points": 2}'
 ```
 
-Done when a read-back of the card shows every value you set.
+Done when read-backs of both cards show every value you set.
 
 ## 3. Commit and push
 

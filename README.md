@@ -18,7 +18,7 @@ Run after `/to-spec` has written `.scratch/<feature>/spec.md`. It ships the plan
 
 0. Asks which branch to start from and merge into (default `develop`) and who reviews the plan (default `boy-thairun`), and puts the work on a `feat/<CLICKUP-ID>-…` branch from that base.
 1. Creates a **Planning** subtask under the ClickUp task, with the spec as its description.
-2. Fills its dates, priority, assignee, time estimate and custom fields, and recommends sprint points.
+2. Fills its dates (from the work date: now minus 6 hours, so late-night work counts toward the day before), priority, assignee, time estimate and custom fields, sets the parent card's Project and Type to match, and recommends sprint points.
 3. Commits the planning docs (`GLOSSARY.md`, new ADRs, `.scratch/<feature>/`) and pushes the branch to your fork.
 4. Opens the PR from your fork to the chosen base branch on `upstream` (Bitbucket), through Claude in Chrome.
 5. Moves the Planning card to `in review`.
