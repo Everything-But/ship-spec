@@ -6,18 +6,19 @@ disable-model-invocation: true
 
 Run after `/to-spec` has written `.scratch/<feature>/spec.md`. You ship the plan, not code: a ClickUp **Planning** subtask holding the spec, a docs-only commit, a PR, the card in `in review`, and a review request on the parent card. Each step ends on a check you make by reading back what you wrote; a tool's `success` is not that check.
 
-Needed in hand: the spec file and the parent ClickUp ID (e.g. `DEV-5822`). If the ClickUp tools are missing, stop and tell the user to reconnect ClickUp; there is no fallback.
+Needed in hand: the spec file. If the ClickUp tools are missing, stop and tell the user to reconnect ClickUp; there is no fallback.
 
-## 0. Base branch and reviewer
+## 0. ClickUp ID, base branch and reviewer
 
-Ask both in one `AskUserQuestion` call, each with its default as the first, recommended option:
+Ask in one `AskUserQuestion` call, each question with its default as the first, recommended option:
 
+- **ClickUp ID** (the parent card, e.g. `DEV-1234`): ask only when the user has not given it in this conversation. Offer as options the IDs you find in the current branch name or a `ClickUp-Task:` line in the spec, else up to three of the user's open ClickUp tasks; the user types any other ID through "Other".
 - **Base branch**: the branch the feature branch is created from and the PR merges into. Default `develop`; offer `master` beside it.
 - **Reviewer**: the ClickUp user asked to review the plan in step 6. Default `boy-thairun`.
 
 Then put the work on a feature branch from that base. On a branch already named for this card (`feat/<CLICKUP-ID>-…`), keep it, and say so if it does not start from `upstream/<base>`. Otherwise `git fetch upstream` and `git switch -c feat/<CLICKUP-ID>-<short-description> upstream/<base>`; the untracked planning docs come along.
 
-Done when both answers are in hand and the feature branch is checked out.
+Done when the ClickUp ID, base branch and reviewer are in hand and the feature branch is checked out.
 
 ## 1. Planning subtask
 
