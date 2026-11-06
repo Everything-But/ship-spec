@@ -1,16 +1,18 @@
 ---
 name: ship-spec
-description: "After /to-spec: publish the spec as a ClickUp Planning subtask, fill its fields, commit and push the planning docs, open the PR, move the card to in review, and ask for plan review on the parent card."
+description: "After /to-spec or a grilling session: publish the spec as a ClickUp Planning subtask, fill its fields, commit and push the planning docs, open the PR, move the card to in review, and ask for plan review on the parent card. Also ships a fix plan: a Planning fix subtask that extends an already-planned card."
 disable-model-invocation: true
 ---
 
-If `.scratch/<feature>/spec.md` is missing, stop and tell the user to run `/to-spec`. If the ClickUp tools are missing, stop and tell the user to reconnect ClickUp.
+If `.scratch/<feature>/spec.md` is missing, stop and tell the user to run `/to-spec`; when this conversation holds a grilling session, offer to run it on that session's decisions. If the ClickUp tools are missing, stop and tell the user to reconnect ClickUp.
 
 `<feature>` is that folder's name. `<Feature>` is the feature's name as the spec's title writes it (e.g. `Order export`).
 
 Read each file in `references/` in its own call, as the first action of the step or rule that names it, after the previous step's **Done** check passes.
 
 Confirm every **Done** line from a read-back of what you wrote, not from a tool's `success`.
+
+A **fix plan** extends or fixes a card whose plan was already approved. For a fix plan, read `references/fix-plan.md` as soon as the user picks it, and let it override each step it names.
 
 ## Corrections and liked outputs
 
@@ -21,6 +23,7 @@ Confirm every **Done** line from a read-back of what you wrote, not from a tool'
 ## 0. Inputs and branch
 
 1. Ask in one `AskUserQuestion` call, 2–4 options per question, each question's default first and marked recommended:
+   - **Kind of plan**: `New plan` or `Fix plan`, recommended as `references/fix-plan.md` says. For a fix plan, ask the branch, base and reviewer questions that file gives instead of the ones below.
    - **ClickUp ID** of the parent card (e.g. `DEV-1234`). Skip it if the user gave it in this conversation. Options: the ID in the branch name or the spec's `ClickUp-Task:` line, then the user's other open tasks from `clickup_filter_tasks` with `assignees: ["me"]`.
    - **Feature**, only when `.scratch/` holds more than one `spec.md`: one option per folder.
    - **Base branch** to branch from and merge into: `develop` (default), `master`.
@@ -29,7 +32,7 @@ Confirm every **Done** line from a read-back of what you wrote, not from a tool'
 3. If the current branch is `feat/<CLICKUP-ID>-…`, stay on it. If it does not start from `upstream/<base>`, ask the user whether to move it onto `upstream/<base>` (default) or keep it. To move it, run `git rebase --autostash --onto upstream/<base> $(git merge-base HEAD upstream/<other base>)`, where `<other base>` is the base option the user did not pick.
 4. Otherwise run `git switch -c feat/<CLICKUP-ID>-<short-description> upstream/<base>`.
 
-**Done** when you have the ClickUp ID, feature, base branch and reviewer, and the feature branch is checked out on `upstream/<base>` or kept as the user chose.
+**Done** when you have the kind of plan, ClickUp ID, feature, base branch and reviewer, and the feature branch is checked out on `upstream/<base>` or kept as the user chose.
 
 ## 1. Planning subtask
 
@@ -67,13 +70,13 @@ Confirm every **Done** line from a read-back of what you wrote, not from a tool'
 
 **Done** when the tab's URL is the new PR in the `upstream` repo. Then close the tab.
 
-## 5. Card to in review
+## 5. Card status
 
 1. Call `clickup_get_task` on the Planning card with `expand_statuses`.
 2. Set the Planning card's status to `in review`. If the user named a status the list lacks, ask them.
 3. Leave the parent card's status and assignee to the status-sync action.
 
-**Done** when a read-back shows `in review`.
+**Done** when a read-back shows the status you set.
 
 ## 6. Review request
 
@@ -90,4 +93,4 @@ Give the user:
 
 - Links to the Planning card, each PR and the parent's two comments.
 - Each field and its value, with the estimate's breakdown and the recommended sprint points.
-- What is left for them: sprint points, empty fields, and the reviewer's plan review.
+- What is left for them: sprint points, empty fields, and the reviewer's plan review when there is one.
