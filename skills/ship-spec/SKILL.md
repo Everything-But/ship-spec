@@ -4,97 +4,90 @@ description: "After /to-spec: publish the spec as a ClickUp Planning subtask, fi
 disable-model-invocation: true
 ---
 
-Run after `/to-spec` has written `.scratch/<feature>/spec.md`. You ship the plan, not code: a ClickUp **Planning** subtask holding the spec, a docs-only commit, a PR, the card in `in review`, and a review request on the parent card. Each step ends on a check you make by reading back what you wrote; a tool's `success` is not that check.
+If `.scratch/<feature>/spec.md` is missing, stop and tell the user to run `/to-spec`. If the ClickUp tools are missing, stop and tell the user to reconnect ClickUp.
 
-Needed in hand: the spec file. If the ClickUp tools are missing, stop and tell the user to reconnect ClickUp; there is no fallback.
+`<feature>` is that folder's name. `<Feature>` is the feature's name as the spec's title writes it (e.g. `Order export`).
 
-## 0. ClickUp ID, base branch and reviewer
+Read each file in `references/` in its own call, as the first action of the step or rule that names it, after the previous step's **Done** check passes.
 
-Ask in one `AskUserQuestion` call, each question with its default as the first, recommended option:
+Confirm every **Done** line from a read-back of what you wrote, not from a tool's `success`.
 
-- **ClickUp ID** (the parent card, e.g. `DEV-1234`): ask only when the user has not given it in this conversation. Offer as options the IDs you find in the current branch name or a `ClickUp-Task:` line in the spec, else up to three of the user's open ClickUp tasks; the user types any other ID through "Other".
-- **Base branch**: the branch the feature branch is created from and the PR merges into. Default `develop`; offer `master` beside it.
-- **Reviewer**: the ClickUp user asked to review the plan in step 6. Default `boy-thairun`.
+## Corrections and liked outputs
 
-Then put the work on a feature branch from that base. On a branch already named for this card (`feat/<CLICKUP-ID>-…`), keep it, and say so if it does not start from `upstream/<base>`. Otherwise `git fetch upstream` and `git switch -c feat/<CLICKUP-ID>-<short-description> upstream/<base>`; the untracked planning docs come along.
+1. At any step, when the user corrects an output or explicitly says they like one, first ask in one `AskUserQuestion` call whether to make it a permanent update to this skill. Quote the rule or example you would add and name the step it belongs to. Options: update the skill, or keep it to this run.
+2. On yes, read `references/self-improvement.md` and follow it, then return to the step you were on.
+3. On no, leave the skill as it is and continue.
 
-Done when the ClickUp ID, base branch and reviewer are in hand and the feature branch is checked out.
+## 0. Inputs and branch
+
+1. Ask in one `AskUserQuestion` call, 2–4 options per question, each question's default first and marked recommended:
+   - **ClickUp ID** of the parent card (e.g. `DEV-1234`). Skip it if the user gave it in this conversation. Options: the ID in the branch name or the spec's `ClickUp-Task:` line, then the user's other open tasks from `clickup_filter_tasks` with `assignees: ["me"]`.
+   - **Feature**, only when `.scratch/` holds more than one `spec.md`: one option per folder.
+   - **Base branch** to branch from and merge into: `develop` (default), `master`.
+   - **Reviewer** of the plan: `boy-thairun` (default), `Someone else`.
+2. Run `git fetch upstream`.
+3. If the current branch is `feat/<CLICKUP-ID>-…`, stay on it. If it does not start from `upstream/<base>`, ask the user whether to move it onto `upstream/<base>` (default) or keep it. To move it, run `git rebase --autostash --onto upstream/<base> $(git merge-base HEAD upstream/<other base>)`, where `<other base>` is the base option the user did not pick.
+4. Otherwise run `git switch -c feat/<CLICKUP-ID>-<short-description> upstream/<base>`.
+
+**Done** when you have the ClickUp ID, feature, base branch and reviewer, and the feature branch is checked out on `upstream/<base>` or kept as the user chose.
 
 ## 1. Planning subtask
 
-1. `clickup_get_user` for the user's id and `current_time` (dates come from this clock, not yours). `clickup_get_task` on the parent: it must be assigned to the user, or stop with `TASK OWNERSHIP INVALID`. Note its list id, priority, and `Project` and `Type` fields.
-2. `clickup_create_task` in the parent's list with `parent` set, `name: "Planning"`, and `markdown_description` = the spec, opening with one line naming the parent ID, the repo copy path and the branch. Name repo files by path in backticks, never as relative links ClickUp cannot follow. Put every dotted name (`GLOSSARY.md`, `Thai.run`) in backticks too, or ClickUp turns it into an `http://` link.
+1. Read `references/planning-description.md`.
+2. Call `clickup_get_user`. Keep the user's id and `current_time`.
+3. Call `clickup_get_task` on the parent with `include: ["custom_fields"]`. If it is not assigned to the user, stop with `TASK OWNERSHIP INVALID`. Keep its list id, priority, `Project`, `Type` and `Starting on`.
+4. Call `clickup_create_task` in the parent's list with `parent` = the parent ID, `name: "Planning"`, and `markdown_description` written as `references/planning-description.md` says.
 
-Done when `clickup_get_task` on the new card shows the full description and the right parent.
+**Done** when `clickup_get_task` on the new card shows the full description and the right parent.
 
 ## 2. Card fields
 
-One `clickup_update_task` call on the Planning card, then one on the parent.
+1. Read `references/card-fields.md`.
+2. Set the Planning card's fields in one `clickup_update_task` call.
+3. Set the parent's `Project`, `Type` and `Starting on` in one `clickup_update_task` call.
+4. Give the user the recommended sprint points and the `curl` command from `references/card-fields.md`.
 
-**Work date**: take `current_time` from `clickup_get_user` (the user's timezone), subtract 6 hours, and keep the date. Work done before 06:00 counts toward the previous day.
-
-On the Planning card:
-
-- `start_date` = the work date, `due_date` = the day after the work date.
-- `priority` = the parent's priority.
-- `assignees: ["me"]`.
-- `time_estimate` in minutes: the planning effort, built from a breakdown you state to the user (code reading, design decisions, glossary/ADR/spec writing, Tech Lead review). About 4h for a feature-sized plan.
-- Custom fields: read them with `clickup_get_custom_fields` for the list and folder, then pick each value from what you know: the project and repository dropdowns from this repo, `Type` from the parent (else the kind of work the parent is), `Starting on` and any other date field that means "started" = the work date. Leave a field empty when nothing true fills it yet, such as `Completed on` until the card is done. `PR Link` stays empty on every card: a task can span several repositories, so its PRs are listed in the parent card's comment (step 6). Say which fields you left empty and why.
-
-On the parent card: set `Project` and `Type` to the same values as the Planning card, and only those two fields. Where the parent already has a value, keep it and give the Planning card the parent's value instead.
-
-**Sprint points** go on the Planning card only. The parent card's points stay as they are: ClickUp sums its subtasks' points into the parent. They are a ClickApp field this connector cannot write, so recommend a value (Fibonacci, 1 point ≈ a quarter to half a day; a settled half-day plan is 2) and give the user the UI path and this command to run with their own token on the Planning card:
-
-```bash
-curl -X PUT "https://api.clickup.com/api/v2/task/<task-id>" -H "Authorization: $CLICKUP_API_TOKEN" -H "Content-Type: application/json" -d '{"points": 2}'
-```
-
-Done when read-backs of both cards show every value you set.
+**Done** when `clickup_get_task` with `include: ["custom_fields"]` on both cards shows every value you set.
 
 ## 3. Commit and push
 
-Stage only the planning docs this feature produced: `GLOSSARY.md`, the new ADRs under `docs/adr/`, and `.scratch/<feature>/`. Agent tooling stays local: leave `CLAUDE.md`, an untracked `AGENTS.md`, and `docs/agents/` unstaged, along with anything that came over untracked from another branch.
+1. Stage only `GLOSSARY.md`, this feature's new ADRs under `docs/adr/`, and `.scratch/<feature>/`.
+2. Commit as `docs(<area>): spec <Feature>`, where `<area>` is the code area the spec changes (e.g. `orders` for `src/orders/`), with a one- or two-line body, then the trailers `ClickUp-Task: <CLICKUP-ID>` and the session's co-author line.
+3. Run `git push -u origin <branch>`. Keep the "Create pull request" URL it prints.
 
-Commit as `docs(<area>): spec <Feature>` with a body of one or two lines, then the trailers `ClickUp-Task: <CLICKUP-ID>` and the session's co-author line. `git push -u origin <branch>`; keep the "Create pull request" URL Bitbucket prints.
-
-Done when `git status` shows the three paths committed and the push reports the new branch.
+**Done** when `git status` shows the three paths committed and the push reports the new branch.
 
 ## 4. Pull request
 
-The remotes are on Bitbucket, which has no CLI here: create the PR in the user's Chrome. Load the `claude-in-chrome` skill, open the URL from the push, and set:
+1. Read `references/pull-request.md`.
+2. Load the `claude-in-chrome` skill and open the "Create pull request" URL.
+3. Fill the form with the values from `references/pull-request.md`.
+4. Screenshot the form and check the repos, the branches, and that the files changed are the ones committed in step 3.
+5. Press **Create pull request**.
 
-- **Destination**: the `upstream` repository (the fork is `origin`), the base branch from step 0.
-- **Title**: `[<CLICKUP-ID>] Spec: <Feature>`.
-- **Description**, one line each: `ClickUp-Task: <CLICKUP-ID>` first, then the task and its Planning card ID, the goal, the files changed, the base branch when it is not `develop` (with the user's reason, if they gave one), `Contracts: NO. Migrations: none. Tests: none (docs only). Security impact: N/A.`, and the session's generated-with line.
-- No reviewers unless the user names them.
-
-Check the form (repos, branches, file count) on a screenshot before pressing **Create pull request**. Done when the tab's URL is the new PR in the upstream repo; close the tab you opened.
+**Done** when the tab's URL is the new PR in the `upstream` repo. Then close the tab.
 
 ## 5. Card to in review
 
-Set the Planning card's status to `in review` (the list's statuses come from `clickup_get_task` with `expand_statuses`; a status the user names that the list lacks is a question for them, not a guess). The parent card's status and assignee stay untouched: the status-sync action owns them.
+1. Call `clickup_get_task` on the Planning card with `expand_statuses`.
+2. Set the Planning card's status to `in review`. If the user named a status the list lacks, ask them.
+3. Leave the parent card's status and assignee to the status-sync action.
 
-Done when a read-back shows `in review`.
+**Done** when a read-back shows `in review`.
 
-## 6. Review request on the parent card
+## 6. Review request
 
-Post **two** separate comments on the parent card with `clickup_create_comment`, in this order:
+1. Read `references/comments.md`.
+2. Call `clickup_resolve_assignees` for the reviewer's numeric id.
+3. Post the pull requests comment with `clickup_create_comment`, `entity_type: "task"` and `entity_id` = the parent ID.
+4. Post the review request as a second comment.
 
-1. **Every related PR**, one line per PR labelled with its repository:
-
-   ```markdown
-   Pull requests:
-   - api: [[<CLICKUP-ID>] Spec: <Feature>](<PR URL>)
-   ```
-
-2. **The review request**, a mention of the reviewer from step 0 with `please review the plan` and the Planning card's link. Resolve the reviewer's numeric id with `clickup_resolve_assignees` and write the mention as `[@<username>](#user_mention#<id>)`:
-
-   ```markdown
-   [@<reviewer>](#user_mention#<id>) please review the plan: [Planning](<Planning card URL>) (<Planning ID>)
-   ```
-
-Done when `clickup_get_task_comments` on the parent shows both comments: the first with every PR, the second with the `@<username>` mention.
+**Done** when `clickup_get_task_comments` on the parent shows both comments: the first with every PR, the second with the `@<username>` mention.
 
 ## Report
 
-Link the Planning card, each PR and the parent's two comments, list the fields and the values you chose (with the estimate's breakdown and the recommended sprint points), and name what is left for the user: sprint points, anything left empty, and the plan review the reviewer was asked for.
+Give the user:
+
+- Links to the Planning card, each PR and the parent's two comments.
+- Each field and its value, with the estimate's breakdown and the recommended sprint points.
+- What is left for them: sprint points, empty fields, and the reviewer's plan review.
