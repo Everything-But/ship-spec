@@ -27,7 +27,7 @@ A **fix plan** extends or fixes a card whose plan was already approved. For a fi
    - **ClickUp ID** of the parent card (e.g. `DEV-1234`). Skip it if the user gave it in this conversation. Options: the ID in the branch name or the spec's `ClickUp-Task:` line, then the user's other open tasks from `clickup_filter_tasks` with `assignees: ["me"]`.
    - **Feature**, only when `.scratch/` holds more than one `spec.md`: one option per folder.
    - **Base branch** to branch from and merge into: `develop` (default), `master`.
-   - **Reviewer** of the plan: `boy-thairun` (default), `Someone else`.
+   - **Reviewer** of the plan: `No review` (default), `boy-thairun`, `Someone else`.
 2. Run `git fetch upstream`.
 3. If the current branch is `feat/<CLICKUP-ID>-…`, stay on it. If it does not start from `upstream/<base>`, ask the user whether to move it onto `upstream/<base>` (default) or keep it. To move it, run `git rebase --autostash --onto upstream/<base> $(git merge-base HEAD upstream/<other base>)`, where `<other base>` is the base option the user did not pick.
 4. Otherwise run `git switch -c feat/<CLICKUP-ID>-<short-description> upstream/<base>`.
@@ -66,9 +66,9 @@ A **fix plan** extends or fixes a card whose plan was already approved. For a fi
 2. Load the `claude-in-chrome` skill and open the "Create pull request" URL.
 3. Fill the form with the values from `references/pull-request.md`.
 4. Screenshot the form and check the repos, the branches, and that the files changed are the ones committed in step 3.
-5. Press **Create pull request**.
+5. Press **Create draft**, not **Create pull request**.
 
-**Done** when the tab's URL is the new PR in the `upstream` repo. Then close the tab.
+**Done** when the tab's URL is the new PR in the `upstream` repo and the PR shows as a draft. Then close the tab.
 
 ## 5. Card status
 
@@ -81,11 +81,10 @@ A **fix plan** extends or fixes a card whose plan was already approved. For a fi
 ## 6. Review request
 
 1. Read `references/comments.md`.
-2. Call `clickup_resolve_assignees` for the reviewer's numeric id.
-3. Post the pull requests comment with `clickup_create_comment`, `entity_type: "task"` and `entity_id` = the parent ID.
-4. Post the review request as a second comment.
+2. Post the pull requests comment with `clickup_create_comment`, `entity_type: "task"` and `entity_id` = the parent ID.
+3. With a reviewer, call `clickup_resolve_assignees` for their numeric id and post the review request as a second comment. With `No review`, post nothing more.
 
-**Done** when `clickup_get_task_comments` on the parent shows both comments: the first with every PR, the second with the `@<username>` mention.
+**Done** when `clickup_get_task_comments` on the parent shows the pull requests comment with every PR, followed by the review request with the `@<username>` mention when there is a reviewer.
 
 ## Report
 
