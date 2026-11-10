@@ -4,9 +4,11 @@ description: "After /to-spec or a grilling session: publish the spec as a ClickU
 disable-model-invocation: true
 ---
 
-If `.scratch/<feature>/spec.md` is missing, stop and tell the user to run `/to-spec`; when this conversation holds a grilling session, offer to run it on that session's decisions. If the ClickUp tools are missing, stop and tell the user to reconnect ClickUp.
+Read `docs/agents/issue-tracker.md` first: the **tracker doc**. Take three things from it: where specs live, the plan reviewer, and how pull requests are made on this repo's host. If it is missing, stop and tell the user.
 
-`<feature>` is that folder's name. `<Feature>` is the feature's name as the spec's title writes it (e.g. `Order export`).
+The **spec** is the one this branch adds or changes where the tracker doc keeps specs: uncommitted (`git status`), or in a commit that no `upstream` branch has (`git log HEAD --not --remotes=upstream`). If there is none, stop and tell the user to run `/to-spec`; when this conversation holds a grilling session, offer to run it on that session's decisions. If the ClickUp tools are missing, stop and tell the user to reconnect ClickUp.
+
+`<feature>` is the spec's short name as its path gives it (e.g. `order-download` for `Implementation/order-download-spec.md`). `<Feature>` is the feature's name as the spec's title writes it (e.g. `Order export`).
 
 Read each file in `references/` in its own call, as the first action of the step or rule that names it, after the previous step's **Done** check passes.
 
@@ -25,9 +27,9 @@ A **fix plan** extends or fixes a card whose plan was already approved. For a fi
 1. Ask in one `AskUserQuestion` call, 2–4 options per question, each question's default first and marked recommended:
    - **Kind of plan**: `New plan` or `Fix plan`, recommended as `references/fix-plan.md` says. For a fix plan, ask the branch, base and reviewer questions that file gives instead of the ones below.
    - **ClickUp ID** of the parent card (e.g. `DEV-1234`). Skip it if the user gave it in this conversation. Options: the ID in the branch name or the spec's `ClickUp-Task:` line, then the user's other open tasks from `clickup_filter_tasks` with `assignees: ["me"]`.
-   - **Feature**, only when `.scratch/` holds more than one `spec.md`: one option per folder.
+   - **Feature**, only when this branch adds or changes more than one spec: one option per spec.
    - **Base branch** to branch from and merge into: `develop` (default), `master`.
-   - **Reviewer** of the plan: `No review` (default), `boy-thairun`, `Someone else`.
+   - **Reviewer** of the plan: `No review` (default), the tracker doc's plan reviewer, `Someone else`.
 2. Run `git fetch upstream`.
 3. If the current branch is `feat/<CLICKUP-ID>-…`, stay on it. If it does not start from `upstream/<base>`, ask the user whether to move it onto `upstream/<base>` (default) or keep it. To move it, run `git rebase --autostash --onto upstream/<base> $(git merge-base HEAD upstream/<other base>)`, where `<other base>` is the base option the user did not pick.
 4. Otherwise run `git switch -c feat/<CLICKUP-ID>-<short-description> upstream/<base>`.
@@ -54,21 +56,20 @@ A **fix plan** extends or fixes a card whose plan was already approved. For a fi
 
 ## 3. Commit and push
 
-1. Stage only `GLOSSARY.md`, this feature's new ADRs under `docs/adr/`, and `.scratch/<feature>/`.
+1. Stage only `GLOSSARY.md`, this feature's new ADRs under `docs/adr/`, the spec, and any other planning notes in `.scratch/<feature>/`.
 2. Commit as `docs(<area>): spec <Feature>`, where `<area>` is the code area the spec changes (e.g. `orders` for `src/orders/`), with a one- or two-line body, then the trailers `ClickUp-Task: <CLICKUP-ID>` and the session's co-author line.
 3. Run `git push -u origin <branch>`. Keep the "Create pull request" URL it prints.
 
-**Done** when `git status` shows the three paths committed and the push reports the new branch.
+**Done** when `git status` shows those paths committed and the push reports the new branch.
 
 ## 4. Pull request
 
 1. Read `references/pull-request.md`.
-2. Load the `claude-in-chrome` skill and open the "Create pull request" URL.
-3. Fill the form with the values from `references/pull-request.md`.
-4. Screenshot the form and check the repos, the branches, and that the files changed are the ones committed in step 3.
-5. Press **Create draft**, not **Create pull request**.
+2. Prepare the PR the way the tracker doc says for this repo's host, with the values from `references/pull-request.md`.
+3. Check the repos, the branches, and that the files changed are the ones committed in step 3. In a browser, check them on a screenshot of the form.
+4. Create the PR as a draft.
 
-**Done** when the tab's URL is the new PR in the `upstream` repo and the PR shows as a draft. Then close the tab.
+**Done** when the new PR is in the `upstream` repo and shows as a draft. Close any tab you opened.
 
 ## 5. Card status
 

@@ -14,18 +14,18 @@ Run it in the repository you want the skills in. The CLI records each skill's so
 
 ### `/ship-spec`
 
-Run after `/to-spec` has written `.scratch/<feature>/spec.md`. It ships the plan:
+Run after `/to-spec` has written the spec. It ships the plan:
 
-0. Asks for the ClickUp ID if you haven't given it, which branch to start from and merge into (default `develop`), and who reviews the plan (default `boy-thairun`), then puts the work on a `feat/<CLICKUP-ID>-…` branch from that base. An existing feature branch that starts elsewhere is moved onto the base if you agree.
+0. Asks for the ClickUp ID if you haven't given it, which branch to start from and merge into (default `develop`), and who reviews the plan (default: no review), then puts the work on a `feat/<CLICKUP-ID>-…` branch from that base. An existing feature branch that starts elsewhere is moved onto the base if you agree.
 1. Creates a **Planning** subtask under the ClickUp task, with the spec as its description.
 2. Fills its dates (from the work date: now minus 6 hours, so late-night work counts toward the day before), priority, assignee, time estimate and custom fields, sets the parent card's Project and Type to match and its Starting on to the work date, and recommends sprint points.
-3. Commits the planning docs (`GLOSSARY.md`, new ADRs, `.scratch/<feature>/`) and pushes the branch to your fork.
-4. Opens the PR from your fork to the chosen base branch on `upstream` (Bitbucket), through Claude in Chrome.
+3. Commits the planning docs (`GLOSSARY.md`, new ADRs, the spec and any other notes in `.scratch/<feature>/`) and pushes the branch to your fork.
+4. Opens a draft PR from your fork to the chosen base branch on `upstream`, the way `docs/agents/issue-tracker.md` says for the repo's host.
 5. Moves the Planning card to `in review`.
-6. Comments on the parent card twice: the PR links, then a request to the reviewer to review the plan.
+6. Comments on the parent card with the PR links and, if you picked a reviewer, asks them to review the plan.
 
 Needs:
 
-- `/to-spec` and `/setup-matt-pocock-skills` from [mattpocock/skills](https://github.com/mattpocock/skills), with the repo's `docs/agents/issue-tracker.md` set to ClickUp.
+- `/to-spec` and `/setup-matt-pocock-skills` from [mattpocock/skills](https://github.com/mattpocock/skills), with the repo's `docs/agents/issue-tracker.md` set to ClickUp. `/ship-spec` also reads three things from it: where specs live, the plan reviewer, and how PRs are made on each host.
 - The ClickUp connector in Claude Code.
-- Claude in Chrome, signed in to Bitbucket.
+- For Bitbucket repos, Claude in Chrome signed in to Bitbucket. For GitHub repos, `gh` signed in.
