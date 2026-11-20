@@ -59,7 +59,7 @@ A **fix plan** changes a plan that was already approved. For a fix plan, read `r
 
 ## 3. Commit and push
 
-1. Stage only `GLOSSARY.md`, this feature's new ADRs under `docs/adr/`, the spec, and any other planning notes in `.scratch/<feature>/`.
+1. Stage only `GLOSSARY.md`, this feature's new ADRs under `docs/adr/`, the spec, and any other planning notes for this feature where the tracker doc keeps them.
 2. Commit as `docs(<area>): spec <Feature>`, where `<area>` is the code area the spec changes (e.g. `orders` for `src/orders/`), with a one- or two-line body, then the trailers `ClickUp-Task: <first card's ID>` and the session's co-author line.
 3. Run `git push -u origin <branch>`.
 

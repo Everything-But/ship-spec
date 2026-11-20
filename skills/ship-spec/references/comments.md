@@ -7,7 +7,7 @@ Write the mention as `[@<username>](#user_mention#<id>)`, with the numeric id fr
 ```markdown
 [@<reviewer>](#user_mention#<id>) please review the plan for `[<TASK-ID>] <card name>`
 
-- **Spec file:** [`Implementation/<feature>-spec.md`](<spec URL on the pushed branch>), branch `<branch>` in `<spec repo>`
+- **Spec file:** [`<spec path>`](<spec URL on the pushed branch>), branch `<branch>` in `<spec repo>`
 - **Repository:** <repo> · **Type:** <Type> · **Points:** <N>
 - **Owned Paths:**
   - `<path>`
